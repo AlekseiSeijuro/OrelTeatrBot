@@ -1,9 +1,11 @@
 package domain
 
-import "time"
-
 type Session struct {
 	id        int
-	startsAt  time.Time
+	startsAt  string
 	actualNow bool
+}
+
+func NewSession(id int, startsAt string, actualNow bool) *Session {
+	return &Session{id: id, startsAt: startsAt, actualNow: actualNow}
 }
