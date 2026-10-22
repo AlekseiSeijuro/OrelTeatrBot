@@ -3,7 +3,6 @@ package main
 import (
 	"OrelTeatrBot/internal/scraper"
 	"os"
-	"time"
 )
 
 func main() {
@@ -12,5 +11,5 @@ func main() {
 		panic(err)
 	}
 	defer f.Close()
-	scraper.Parse(f, time.Now())
+	scraper.Parse(f)
 }
