@@ -2,7 +2,7 @@ package scraper
 
 import (
 	"OrelTeatrBot/internal/domain"
-	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -43,6 +43,6 @@ func Parse(reader io.Reader) ([]domain.Event, error) {
 
 func logIfError(err error, msg string) {
 	if err != nil {
-		fmt.Errorf(msg, err)
+		log.Print(msg, err)
 	}
 }
