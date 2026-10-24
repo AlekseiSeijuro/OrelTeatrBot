@@ -20,15 +20,21 @@ import (
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		slog.Info("Error loading .env file")
+		return
+	}
 	cnf, err := config.ReadConfigFromEnv()
 	if err != nil {
 		slog.Error("Can't read config", "err", err)
+		return
 	}
 
 	pool, err := pgxpool.New(ctx, cnf.DbConnectionString)
 	if err != nil {
 		slog.Error("Can't connect to database", "err", err)
+		return
 	}
 	defer pool.Close()
 	stg := storage.NewStorage(pool)
