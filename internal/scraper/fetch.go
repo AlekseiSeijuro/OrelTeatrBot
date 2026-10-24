@@ -28,7 +28,7 @@ func (f *Fetcher) Fetch(ctx context.Context) ([]byte, error) {
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create request")
+		return nil, fmt.Errorf("Failed to create request %w", err)
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "+
 		"(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
