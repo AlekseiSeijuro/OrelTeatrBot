@@ -19,14 +19,14 @@ func Parse(reader io.Reader) ([]domain.Event, error) {
 	doc.Find(".elem.quick-tickets-event-card").
 		Each(func(i int, eventCard *goquery.Selection) {
 			eventRef, _ := eventCard.Find(".quick-tickets-heading-link").Attr("href")
-			eventId, err := strconv.Atoi(eventRef[strings.LastIndex(eventRef, "e")+1:])
+			eventId, err := strconv.ParseInt(eventRef[strings.LastIndex(eventRef, "e")+1:], 10, 64)
 			logIfError(err, "Could not parse event ref")
 			title := eventCard.Find("span.underline").Text()
 
 			sessions := make([]domain.Session, 0)
 			eventCard.Find(".quick-tickets-session-option").Each(func(i int, sessionCard *goquery.Selection) {
 				sessionRef, _ := sessionCard.Find(".sessions__date-link").Attr("href")
-				sessionId, err := strconv.Atoi(sessionRef[strings.LastIndex(sessionRef, "s")+1:])
+				sessionId, err := strconv.ParseInt(sessionRef[strings.LastIndex(sessionRef, "s")+1:], 10, 64)
 				logIfError(err, "Could not parse session ref")
 
 				sessionDateText := sessionCard.Find(".quick-tickets-session-option__label").Text()

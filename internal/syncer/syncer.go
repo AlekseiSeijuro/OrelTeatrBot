@@ -15,15 +15,24 @@ type Fetcher interface {
 	Fetch(ctx context.Context) ([]byte, error)
 }
 
+type Storage interface {
+	SaveEvents(ctx context.Context, events []domain.Event) error
+}
+
 type Syncer struct {
 	fetcher       Fetcher
+	store         Storage
 	fetchInterval time.Duration
 	parse         func(io.Reader) ([]domain.Event, error)
 }
 
-func NewSyncer(fetcher Fetcher, fetchInterval time.Duration, parseFunc func(io.Reader) ([]domain.Event, error)) *Syncer {
+func NewSyncer(fetcher Fetcher,
+	store Storage,
+	fetchInterval time.Duration,
+	parseFunc func(io.Reader) ([]domain.Event, error)) *Syncer {
 	return &Syncer{
 		fetcher:       fetcher,
+		store:         store,
 		fetchInterval: fetchInterval,
 		parse:         parseFunc}
 }
@@ -58,6 +67,10 @@ func (s *Syncer) doIteration(ctx context.Context) error {
 	}
 	if len(events) == 0 {
 		return fmt.Errorf("no events found")
+	}
+	err = s.store.SaveEvents(ctx, events)
+	if err != nil {
+		return fmt.Errorf("saving events: %w", err)
 	}
 	slog.Info("iteration done",
 		"total events", len(events))

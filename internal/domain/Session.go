@@ -1,11 +1,11 @@
 package domain
 
 type Session struct {
-	id        int
-	startsAt  string
-	actualNow bool
+	ID        int64
+	DateText  string
+	ActualNow bool
 }
 
-func NewSession(id int, startsAt string, actualNow bool) *Session {
-	return &Session{id: id, startsAt: startsAt, actualNow: actualNow}
+func NewSession(id int64, startsAt string, actualNow bool) *Session {
+	return &Session{ID: id, DateText: startsAt, ActualNow: actualNow}
 }
