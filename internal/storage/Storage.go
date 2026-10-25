@@ -73,3 +73,50 @@ func (s *Storage) UpdateUserActivity(ctx context.Context, user domain.User) (err
 
 	return tx.Commit(ctx)
 }
+
+func (s *Storage) CreateNotifications(ctx context.Context) (int64, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("could not begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	tag, err := tx.Exec(ctx, "INSERT INTO notifications(user_id, session_id, avail_epoch) "+
+		"SELECT chat_id, sessions.id, sessions.avail_epoch "+
+		"FROM sessions, users "+
+		"WHERE sessions.actual_now AND users.is_active "+
+		"ON CONFLICT DO NOTHING")
+
+	if err != nil {
+		return 0, fmt.Errorf("could not insert notifications: %w", err)
+	}
+
+	return tag.RowsAffected(), tx.Commit(ctx)
+}
+
+func (s *Storage) GetNotificationData(ctx context.Context) ([]domain.NotificationData, error) {
+	rows, err := s.pool.Query(ctx, "SELECT n.user_id, e.id, e.title, s.id, s.date_text, n.avail_epoch "+
+		"FROM notifications n "+
+		"INNER JOIN sessions s ON s.id = n.session_id "+
+		"INNER JOIN events e ON e.id = s.event_id "+
+		"WHERE n.status = 'pending' "+
+		"ORDER BY n.user_id, e.id, s.id")
+
+	if err != nil {
+		return nil, fmt.Errorf("could not get notification data: %w", err)
+	}
+	defer rows.Close()
+
+	var result []domain.NotificationData
+	for rows.Next() {
+		var row domain.NotificationData
+		if err := rows.Scan(&row.ChatID, &row.EventID, &row.EventTitle, &row.SessionID, &row.DateText, &row.AvailEpoch); err != nil {
+			return nil, fmt.Errorf("scan notifications: %w", err)
+		}
+		result = append(result, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate notifications: %w", err)
+	}
+	return result, nil
+}

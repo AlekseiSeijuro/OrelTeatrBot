@@ -47,7 +47,7 @@ func main() {
 	if err != nil {
 		slog.Error("Can't connect to telegram", "err", err)
 	}
-	tbot.Start(ctx)
+	go tbot.Start(ctx)
 	err = s.Run(ctx)
 	if !errors.Is(err, context.Canceled) {
 		slog.Error("Failure!", "error:", err)
