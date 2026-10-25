@@ -5,6 +5,7 @@ import (
 	"OrelTeatrBot/internal/scraper"
 	"OrelTeatrBot/internal/storage"
 	syncer "OrelTeatrBot/internal/syncer"
+	"OrelTeatrBot/internal/telegram"
 	"context"
 	"errors"
 	"log/slog"
@@ -37,10 +38,16 @@ func main() {
 		return
 	}
 	defer pool.Close()
+
 	stg := storage.NewStorage(pool)
 	f := scraper.NewFetcher("https://quicktickets.ru/orel-teatr-svobodnoe-prostranstvo")
 	s := syncer.NewSyncer(f, stg, 60*time.Second, scraper.Parse)
 
+	tbot, err := telegram.NewBot(cnf.BotToken, stg)
+	if err != nil {
+		slog.Error("Can't connect to telegram", "err", err)
+	}
+	tbot.Start(ctx)
 	err = s.Run(ctx)
 	if !errors.Is(err, context.Canceled) {
 		slog.Error("Failure!", "error:", err)

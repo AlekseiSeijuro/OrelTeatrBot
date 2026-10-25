@@ -56,3 +56,20 @@ func (s *Storage) SaveEvents(ctx context.Context, events []domain.Event) error {
 
 	return tx.Commit(ctx)
 }
+
+func (s *Storage) UpdateUserActivity(ctx context.Context, user domain.User) (err error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("could not begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx, "INSERT INTO users(chat_id, username, is_active) VALUES($1, NULLIF($2, ''), $3) "+
+		"ON CONFLICT (chat_id) DO UPDATE SET username = NULLIF($2, ''), is_active = $3",
+		user.ChatID, user.Username, user.IsActive)
+	if err != nil {
+		return fmt.Errorf("could not insert user: %w", err)
+	}
+
+	return tx.Commit(ctx)
+}

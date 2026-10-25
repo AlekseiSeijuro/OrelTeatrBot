@@ -4,6 +4,7 @@ go 1.27
 
 require (
 	github.com/PuerkitoBio/goquery v1.13.0
+	github.com/go-telegram/bot v1.27.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
 )
