@@ -2,6 +2,7 @@ package main
 
 import (
 	config "OrelTeatrBot/internal/config"
+	"OrelTeatrBot/internal/notifier"
 	"OrelTeatrBot/internal/scraper"
 	"OrelTeatrBot/internal/storage"
 	syncer "OrelTeatrBot/internal/syncer"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -24,7 +26,6 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		slog.Info("Error loading .env file")
-		return
 	}
 	cnf, err := config.ReadConfigFromEnv()
 	if err != nil {
@@ -46,10 +47,21 @@ func main() {
 	tbot, err := telegram.NewBot(cnf.BotToken, stg)
 	if err != nil {
 		slog.Error("Can't connect to telegram", "err", err)
+		return
 	}
-	go tbot.Start(ctx)
-	err = s.Run(ctx)
-	if !errors.Is(err, context.Canceled) {
-		slog.Error("Failure!", "error:", err)
+
+	ntf := notifier.NewNotifier("https://quicktickets.ru/orel-teatr-svobodnoe-prostranstvo", 30*time.Second,
+		stg, tbot)
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error { return s.Run(ctx) })
+	g.Go(func() error { return ntf.Run(ctx) })
+	g.Go(func() error {
+		tbot.Start(ctx)
+		return nil
+	})
+	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		slog.Error("stopped with error", "err", err)
 	}
 }
