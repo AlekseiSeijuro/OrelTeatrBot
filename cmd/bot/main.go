@@ -21,6 +21,13 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("fatal", "err", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	err := godotenv.Load()
@@ -30,13 +37,13 @@ func main() {
 	cnf, err := config.ReadConfigFromEnv()
 	if err != nil {
 		slog.Error("Can't read config", "err", err)
-		return
+		return err
 	}
 
 	pool, err := pgxpool.New(ctx, cnf.DbConnectionString)
 	if err != nil {
 		slog.Error("Can't connect to database", "err", err)
-		return
+		return err
 	}
 	defer pool.Close()
 
@@ -47,7 +54,7 @@ func main() {
 	tbot, err := telegram.NewBot(cnf.BotToken, stg)
 	if err != nil {
 		slog.Error("Can't connect to telegram", "err", err)
-		return
+		return err
 	}
 
 	ntf := notifier.NewNotifier("https://quicktickets.ru/orel-teatr-svobodnoe-prostranstvo", 30*time.Second,
@@ -63,5 +70,7 @@ func main() {
 	})
 	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		slog.Error("stopped with error", "err", err)
+		return err
 	}
+	return nil
 }
