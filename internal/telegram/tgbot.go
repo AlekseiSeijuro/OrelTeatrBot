@@ -108,3 +108,15 @@ func (t *TgBot) stopHandler(ctx context.Context, b *bot.Bot, update *models.Upda
 		slog.Error("error sending message", "err", err)
 	}
 }
+
+func (t *TgBot) SendMessage(ctx context.Context, chatID int64, message string) (int, error) {
+	m, err := t.bot.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:    chatID,
+		Text:      message,
+		ParseMode: models.ParseModeMarkdown,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("error sending message: %w", err)
+	}
+	return m.ID, nil
+}

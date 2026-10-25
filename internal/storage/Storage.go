@@ -120,3 +120,38 @@ func (s *Storage) GetNotificationData(ctx context.Context) ([]domain.Notificatio
 	}
 	return result, nil
 }
+
+func (s *Storage) MarkNotificationSent(
+	ctx context.Context,
+	chatID int64,
+	sessionID int64,
+	epoch int,
+	messageID int,
+) error {
+
+	_, err := s.pool.Exec(ctx, "UPDATE notifications SET status = 'sent', message_id = $4, sent_at = now() "+
+		"WHERE user_id = $1 AND session_id = $2 AND avail_epoch = $3 AND status = 'pending'",
+		chatID, sessionID, epoch, messageID)
+
+	if err != nil {
+		return fmt.Errorf("could not update notifications: %w", err)
+	}
+	return nil
+}
+
+func (s *Storage) MarkNotificationFailure(
+	ctx context.Context,
+	chatID int64,
+	sessionID int64,
+	epoch int,
+) error {
+
+	_, err := s.pool.Exec(ctx, "UPDATE notifications SET attempts = attempts + 1, "+
+		"status = CASE WHEN attempts + 1 > 5 THEN 'failed' ELSE 'pending' END "+
+		"WHERE user_id = $1 AND session_id = $2 AND avail_epoch = $3 AND status = 'pending'", chatID, sessionID, epoch)
+
+	if err != nil {
+		return fmt.Errorf("could not update notifications: %w", err)
+	}
+	return nil
+}
